@@ -1,0 +1,12 @@
+.env
+
+*.json
+
+temp*
+
+__pycache__/
+venv/
+
+*.exe
+*.log
+*.zip
