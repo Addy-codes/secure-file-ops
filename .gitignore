@@ -13,3 +13,4 @@ test.*
 dummy.*
 logs/
 *.csv
+uploaded_files
