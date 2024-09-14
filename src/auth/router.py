@@ -1,8 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from src.auth.schemas import SignupRequest, LoginRequest, TokenResponse
 from src.auth.service import create_user, create_access_token
-from src.auth.dependencies import get_current_user
-from datetime import timedelta
 from src.database import users_collection
 from passlib.context import CryptContext
 
@@ -18,8 +16,6 @@ async def signup(signup_request: SignupRequest):
         raise HTTPException(status_code=400, detail="Invalid role. Role must be either 'client' or 'ops'.")
 
     user = await create_user(signup_request)
-
-    print(user)
 
     access_token = create_access_token({"sub": signup_request.email, "role": signup_request.role})
 
