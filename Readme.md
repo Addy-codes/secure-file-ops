@@ -7,7 +7,8 @@
 - **Client Users**: Can register, verify their accounts, and securely download files.
 
 ## Routes
-![image](https://github.com/user-attachments/assets/150b48f2-a40e-46f5-a17c-9f83d050fa1c)
+![image](https://github.com/user-attachments/assets/63694885-2d91-448a-b6e1-ce20e9683e2c)
+
 
 ## Technology Stack
 - **FastAPI**: For building the high-performance API server.
