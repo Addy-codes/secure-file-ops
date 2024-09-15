@@ -7,9 +7,8 @@ from src.database import users_collection
 security = HTTPBearer()
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials  # Extract the actual token string from the credentials
+    token = credentials.credentials
     try:
-        # Decode the JWT token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
         if email is None:

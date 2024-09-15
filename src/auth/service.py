@@ -33,7 +33,7 @@ async def create_user(signup_request: SignupRequest):
 
     result = await users_collection.insert_one(user_data)
 
-    send_verification_email(signup_request.email)
+    await send_verification_email(signup_request.email)
     
     return {"id": str(result.inserted_id)}
 
@@ -57,8 +57,13 @@ def create_access_token(data: dict):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+async def verification_email(user):
+    if user["is_verified"]:
+        return {"message": "Email already verified"}
+    await send_verification_email(user['email'])
 
-def send_verification_email(user_email: str):
+
+async def send_verification_email(user_email: str):
     token = create_access_token({"email": user_email})
 
     verification_url = f"http://127.0.0.1:8000/auth/verify-email?token={token}"
