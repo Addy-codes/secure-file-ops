@@ -12,6 +12,11 @@ app = FastAPI(
 app.include_router(auth_router, prefix="/auth")
 app.include_router(file_router, prefix="/files")
 
+@app.get("/ping")
+async def root():
+    return {"message": "Welcome to Secure File Ops by AddyCodes"}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)

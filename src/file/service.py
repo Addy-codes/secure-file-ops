@@ -86,7 +86,7 @@ async def list_files_with_creators():
         files = await files_collection.find({"is_active": True}).to_list(length=None)
         
         if not files:
-            raise HTTPException(status_code=404, detail="No files found")
+            return JSONResponse(status_code=404, content="No files found")
 
         file_list = []
         for file in files:
