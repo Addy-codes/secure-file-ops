@@ -9,6 +9,19 @@ import requests
 import io
 
 async def upload_file(file: UploadFile, user):
+    """
+    Upload a file to an external service and store its metadata in the database.
+
+    Args:
+        file (UploadFile): The file to be uploaded.
+        user: The authenticated user uploading the file.
+
+    Returns:
+        JSONResponse: A response containing the file ID and file name.
+
+    Raises:
+        HTTPException: If there is an error during the file upload process.
+    """
     try:
         file_data = await file.read()
 
@@ -44,6 +57,18 @@ async def upload_file(file: UploadFile, user):
         raise HTTPException(status_code=500, detail=f"Error uploading file: {e}")
 
 async def generate_download_link(file_id: str):
+    """
+    Generate a download link for a file.
+
+    Args:
+        file_id (str): The ID of the file.
+
+    Returns:
+        JSONResponse: A response containing the download link.
+
+    Raises:
+        HTTPException: If there is an error during the link generation process.
+    """
     try:
         encrypted_link = utils.encrypt_data(ENCRYPTION_KEY, file_id)
         return JSONResponse(status_code=200, content={"download_link": f"{BASE_URL}/files/download/{encrypted_link.decode()}", "message": "success"})
@@ -51,6 +76,18 @@ async def generate_download_link(file_id: str):
         raise HTTPException(status_code=500, detail=f"Error generating download link: {e}")
 
 async def download_file(encrypted_link: str):
+    """
+    Download a file using an encrypted link.
+
+    Args:
+        encrypted_link (str): The encrypted link for the file.
+
+    Returns:
+        StreamingResponse: A streaming response containing the file data.
+
+    Raises:
+        HTTPException: If there is an error during the file download process.
+    """
     try:
         file_id = utils.decrypt_data(ENCRYPTION_KEY, encrypted_link)
 
@@ -82,6 +119,15 @@ async def download_file(encrypted_link: str):
         raise HTTPException(status_code=400, detail=f"Invalid link or decryption failed: {e}")
 
 async def list_files_with_creators():
+    """
+    List all active files with their creators.
+
+    Returns:
+        JSONResponse: A response containing a list of files and their creators.
+
+    Raises:
+        HTTPException: If there is an error during the file retrieval process.
+    """
     try:
         files = await files_collection.find({"is_active": True}).to_list(length=None)
         

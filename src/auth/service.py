@@ -13,7 +13,18 @@ from password_strength import PasswordStats
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def create_user(signup_request: SignupRequest):
+    """
+    Create a new user in the database.
 
+    Args:
+        signup_request (SignupRequest): The user's signup information.
+
+    Returns:
+        dict: The ID of the newly created user.
+
+    Raises:
+        HTTPException: If the user already exists or the password is not strong enough.
+    """
     validate_password_strength(signup_request.password)
 
     existing_user = await users_collection.find_one({"email": signup_request.email})
@@ -43,6 +54,18 @@ async def create_user(signup_request: SignupRequest):
 
 
 async def verify_user(email: str):
+    """
+    Verify a user's email address.
+
+    Args:
+        email (str): The user's email address.
+
+    Returns:
+        dict: A success message if the user is verified.
+
+    Raises:
+        HTTPException: If the user verification fails.
+    """
     result = await users_collection.update_one(
         {"email": email},
         {"$set": {"is_verified": True}}
@@ -54,6 +77,15 @@ async def verify_user(email: str):
 
 
 def create_access_token(data: dict):
+    """
+    Create a JWT access token.
+
+    Args:
+        data (dict): The data to encode in the token.
+
+    Returns:
+        str: The encoded JWT token.
+    """
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
@@ -62,12 +94,30 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 async def verification_email(user):
+    """
+    Send a verification email to the user if not already verified.
+
+    Args:
+        user (dict): The user document.
+
+    Returns:
+        dict: A message indicating the email verification status.
+    """
     if user["is_verified"]:
         return {"message": "Email already verified"}
     await send_verification_email(user['email'])
 
 
 async def send_verification_email(user_email: str):
+    """
+    Send a verification email to the user.
+
+    Args:
+        user_email (str): The user's email address.
+
+    Raises:
+        HTTPException: If the email sending fails.
+    """
     token = create_access_token({"email": user_email})
 
     verification_url = f"{BASE_URL}/auth/verify-email?token={token}"
@@ -88,6 +138,18 @@ async def send_verification_email(user_email: str):
 
 
 async def change_to_verified(token: str):
+    """
+    Change the user's status to verified using the provided token.
+
+    Args:
+        token (str): The verification token.
+
+    Returns:
+        dict: A message indicating the email verification status.
+
+    Raises:
+        HTTPException: If the token is invalid, expired, or the user is not found.
+    """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_email = payload.get("email")
@@ -113,6 +175,15 @@ async def change_to_verified(token: str):
         raise HTTPException(status_code=400, detail="Invalid token")
 
 def validate_password_strength(password: str):
+    """
+    Validate the strength of the provided password.
+
+    Args:
+        password (str): The password to validate.
+
+    Raises:
+        HTTPException: If the password does not meet complexity requirements.
+    """
     stats = PasswordStats(password)
 
     if stats.strength() < 0.5:

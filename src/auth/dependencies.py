@@ -7,6 +7,18 @@ from src.database import users_collection
 security = HTTPBearer()
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Retrieves the current user based on the provided JWT token.
+
+    Args:
+        credentials (HTTPAuthorizationCredentials): The HTTP authorization credentials containing the JWT token.
+
+    Returns:
+        dict: The user document from the database if the token is valid and the user is found.
+
+    Raises:
+        HTTPException: If the token is invalid, expired, or the user is not found.
+    """
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
