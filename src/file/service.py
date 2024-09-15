@@ -23,8 +23,13 @@ async def upload_file(file: UploadFile, user):
         HTTPException: If there is an error during the file upload process.
     """
     try:
+        # Step 1: Verify the file before upload
+        await utils.verify_file(file)
+
+        # Step 2: Read file data for upload
         file_data = await file.read()
 
+        # Step 3: Upload to external service
         response = requests.post(
             'https://file.io', 
             files={'file': file_data}
@@ -35,6 +40,7 @@ async def upload_file(file: UploadFile, user):
 
         response_data = response.json()
 
+        # Step 4: Store metadata in database
         file_id = ObjectId()
         encrypted_url = utils.encrypt_data(ENCRYPTION_KEY, str(file_id))
 
@@ -52,6 +58,10 @@ async def upload_file(file: UploadFile, user):
         await files_collection.insert_one(file_metadata)
 
         return JSONResponse(status_code=201, content={"file_id": str(file_id), "file_name": file.filename})
+
+    except HTTPException as e:
+        # Re-raise HTTPExceptions for better control
+        raise e
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error uploading file: {e}")

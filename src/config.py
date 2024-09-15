@@ -1,5 +1,5 @@
 import os
-from src.file import utils
+from cryptography.fernet import Fernet
 from sib_api_v3_sdk import Configuration
 from dotenv import load_dotenv
 
@@ -8,14 +8,23 @@ load_dotenv()
 description = """
 This project implements a **highly secure file-sharing system** utilizing **FastAPI** and **MongoDB** for two distinct user roles: Operations (Ops) Users and Client Users.
 
-Key functionalities:
-- **Ops User**:
-  - Upload files restricted to `.pptx`, `.docx`, and `.xlsx` formats.
-  - Only authorized Ops Users are allowed to perform uploads.
-- **Client User**:
-  - Register with secure email verification flow.
-  - Access and download files via encrypted URLs.
-  - View a list of available files, ensuring controlled and secure access.
+Existing users:
+
+User1: Verified Client
+
+{
+  "email": "adeeb9839@gmail.com",
+  "password": "ez-wroks9839",
+  "role": "client"
+}
+
+User2: Ops
+
+{
+  "email": "adeeb.rimor@gmail.com",
+  "password": "ez-wroks9839",
+  "role": "ops"
+}
 
 Security highlights:
 - **JWT Authentication**: Ensures secure API access with role-based restrictions.
@@ -29,7 +38,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-ENCRYPTION_KEY = utils.generate_key(SECRET_KEY)
+ENCRYPTION_KEY = Fernet.generate_key() + SECRET_KEY.encode()
 
 MONGO_URI = os.getenv("MONGO_URI")
 DATABASE = os.getenv("DATABASE")
@@ -40,3 +49,8 @@ CONFIGURATION.api_key['api-key'] = os.getenv("BREVO_API_KEY")
 PROJECT_TITLE = "Secure File OPS"
 PROJECT_DESCRIPTION = description
 PROJECT_VERSION = "0.0.1"
+
+ALLOWED_FILE_TYPES = ['application/vnd.openxmlformats-officedocument.presentationml.presentation',  # pptx
+                      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # docx
+                      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']  # xlsx
+MAX_FILE_SIZE = 3 * 1024 * 1024  # 3MB

@@ -1,16 +1,7 @@
 from cryptography.fernet import Fernet
-
-def generate_key(secret_key):
-    """
-    Generate a new encryption key by combining a generated key with a secret key.
-
-    Args:
-        secret_key (str): The secret key to be combined with the generated key.
-
-    Returns:
-        bytes: The combined encryption key.
-    """
-    return Fernet.generate_key() + secret_key.encode()
+from src.config import MAX_FILE_SIZE, ALLOWED_FILE_TYPES
+from fastapi import HTTPException
+from starlette.datastructures import UploadFile
 
 def encrypt_data(key, data):
     """
@@ -41,3 +32,33 @@ def decrypt_data(key, encrypted_data):
     f = Fernet(key)
     decrypted_data = f.decrypt(encrypted_data).decode()
     return decrypted_data
+
+async def verify_file(file: UploadFile):
+    """
+    Verify if the uploaded file meets the required conditions:
+    - File must be .pptx, .docx, or .xlsx.
+    - File must not be larger than 3MB.
+    
+    Args:
+        file (UploadFile): The file to be verified.
+    
+    Raises:
+        HTTPException: If the file is invalid or does not meet the criteria.
+    """
+
+    if file.content_type not in ALLOWED_FILE_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file type. Only .pptx, .docx, and .xlsx files are allowed."
+        )
+
+    file_size = 0
+    contents = await file.read()  # Read the contents of the file
+    file_size = len(contents)  # Get the size of the file
+    await file.seek(0)  # Reset the file pointer after reading the file
+
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File size exceeds 3MB. Uploaded file size: {file_size / (1024 * 1024):.2f} MB"
+        )
