@@ -28,3 +28,14 @@ def require_role(role: str):
             raise HTTPException(status_code=403, detail="Insufficient permissions")
         return user
     return role_dependency
+
+def is_verified_client(user: dict = Depends(get_current_user)):
+    """
+    Dependency that checks if the user is verified.
+    """
+    if not user.get("is_verified", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User is not verified"
+        )
+    return user

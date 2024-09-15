@@ -1,10 +1,10 @@
-from src.database import files_collection
+from src.database import files_collection, users_collection
 from fastapi import UploadFile, HTTPException
 from fastapi.responses import StreamingResponse, JSONResponse
 from datetime import datetime
 from bson import ObjectId
 from src.file import utils
-from src.config import ENCRYPTION_KEY
+from src.config import ENCRYPTION_KEY, BASE_URL
 import requests
 import io
 
@@ -46,7 +46,7 @@ async def upload_file(file: UploadFile, user):
 async def generate_download_link(file_id: str):
     try:
         encrypted_link = utils.encrypt_data(ENCRYPTION_KEY, file_id)
-        return JSONResponse(status_code=200, content={"download_link": f"http://127.0.0.1:8000/files/download/{encrypted_link.decode()}", "message": "success"})
+        return JSONResponse(status_code=200, content={"download_link": f"{BASE_URL}/files/download/{encrypted_link.decode()}", "message": "success"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating download link: {e}")
 
@@ -80,3 +80,31 @@ async def download_file(encrypted_link: str):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid link or decryption failed: {e}")
+
+async def list_files_with_creators():
+    try:
+        files = await files_collection.find({"is_active": True}).to_list(length=None)
+        
+        if not files:
+            raise HTTPException(status_code=404, detail="No files found")
+
+        file_list = []
+        for file in files:
+            user = await users_collection.find_one({"_id": ObjectId(file['uploaded_by'])}, {"_id": 1, "email": 1})
+            
+            if user:
+                file_list.append({
+                    "file_id": str(file["_id"]),
+                    "file_name": file["file_name"],
+                    "file_type": file["file_type"],
+                    "upload_time": str(file["upload_time"]),
+                    "uploaded_by": {
+                        "user_id": str(user["_id"]),
+                        "email": user["email"]
+                    },
+                })
+        
+        return JSONResponse(status_code=200, content={"files": file_list})
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving files: {e}")

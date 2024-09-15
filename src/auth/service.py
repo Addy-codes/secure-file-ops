@@ -4,7 +4,7 @@ from src.auth.schemas import SignupRequest
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-from src.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, CONFIGURATION
+from src.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, CONFIGURATION, BASE_URL
 from sib_api_v3_sdk import ApiClient
 from sib_api_v3_sdk.api.transactional_emails_api import TransactionalEmailsApi
 from sib_api_v3_sdk.models import SendSmtpEmail
@@ -23,7 +23,6 @@ async def create_user(signup_request: SignupRequest):
     hashed_password = pwd_context.hash(signup_request.password)
     
     user_data = {
-        "username": signup_request.email.split("@")[0],
         "email": signup_request.email,
         "password": hashed_password,
         "role": signup_request.role,
@@ -32,8 +31,9 @@ async def create_user(signup_request: SignupRequest):
     }
 
     result = await users_collection.insert_one(user_data)
-
-    await send_verification_email(signup_request.email)
+    
+    if signup_request.role == 'client':
+        await send_verification_email(signup_request.email)
     
     return {"id": str(result.inserted_id)}
 
@@ -66,7 +66,7 @@ async def verification_email(user):
 async def send_verification_email(user_email: str):
     token = create_access_token({"email": user_email})
 
-    verification_url = f"http://127.0.0.1:8000/auth/verify-email?token={token}"
+    verification_url = f"{BASE_URL}/auth/verify-email?token={token}"
 
     api_instance = TransactionalEmailsApi(ApiClient(CONFIGURATION))
     
