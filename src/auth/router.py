@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from src.auth.schemas import SignupRequest, LoginRequest, TokenResponse
-from src.auth.service import create_user, create_access_token
+from src.auth.service import create_user, create_access_token, change_to_verified
 from src.database import users_collection
 from passlib.context import CryptContext
 
@@ -11,7 +11,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 @router.post("/signup", response_model=TokenResponse)
 async def signup(signup_request: SignupRequest):
-    
+
     if signup_request.role not in ["client", "ops"]:
         raise HTTPException(status_code=400, detail="Invalid role. Role must be either 'client' or 'ops'.")
 
@@ -28,4 +28,10 @@ async def login(login_request: LoginRequest):
         raise HTTPException(status_code=403, detail="Invalid credentials")
     
     access_token = create_access_token({"sub": user["email"], "role": user["role"]})
-    return {"access_token": access_token}
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.get("/verify-email")
+async def verify_email(token: str):
+
+    return await change_to_verified(token)
