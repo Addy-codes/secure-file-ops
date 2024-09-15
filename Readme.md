@@ -1,4 +1,3 @@
-
 # Secure File OPS
 
 ## Overview
@@ -7,9 +6,12 @@
 - **Ops Users**: Authorized to upload specific file types.
 - **Client Users**: Can register, verify their accounts, and securely download files.
 
+## Routes
+![image](https://github.com/user-attachments/assets/150b48f2-a40e-46f5-a17c-9f83d050fa1c)
+
 ## Technology Stack
 - **FastAPI**: For building the high-performance API server.
-- **MongoDB**: Used as the database for user and file information storage.
+- **MongoDB**: Used as the database for user and file information storage. It is deployed separately for better scalability.
 - **JWT**: Utilized for secure user authentication and role-based access control.
 - **File.io**: Used for secure cloud storage in this project. In a real production environment, services like AWS S3 or Google Cloud Storage can be used as per requirements.
 - **Brevo**: Integrated for sending actual verification emails with a verification link. This setup is also production-ready, though AWS SES could be an alternative.
