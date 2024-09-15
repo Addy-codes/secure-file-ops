@@ -8,10 +8,14 @@ from src.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, CONFI
 from sib_api_v3_sdk import ApiClient
 from sib_api_v3_sdk.api.transactional_emails_api import TransactionalEmailsApi
 from sib_api_v3_sdk.models import SendSmtpEmail
+from password_strength import PasswordStats
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def create_user(signup_request: SignupRequest):
+
+    validate_password_strength(signup_request.password)
+
     existing_user = await users_collection.find_one({"email": signup_request.email})
     
     if existing_user:
@@ -107,3 +111,12 @@ async def change_to_verified(token: str):
         raise HTTPException(status_code=400, detail="Verification token has expired")
     except jwt.JWTError:
         raise HTTPException(status_code=400, detail="Invalid token")
+
+def validate_password_strength(password: str):
+    stats = PasswordStats(password)
+
+    if stats.strength() < 0.5:
+        raise HTTPException(
+            status_code=400, 
+            detail="Password does not meet complexity requirements."
+        )

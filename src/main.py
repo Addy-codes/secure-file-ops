@@ -12,7 +12,7 @@ app = FastAPI(
 app.include_router(auth_router, prefix="/auth")
 app.include_router(file_router, prefix="/files")
 
-@app.get("/ping")
+@app.get("/")
 async def root():
     return {"message": "Welcome to Secure File Ops by AddyCodes"}
 

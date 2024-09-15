@@ -7,9 +7,9 @@ RUN apt-get update \
 
 RUN pip install --no-cache-dir --upgrade pip
 
-COPY ./requirements/base.txt /app/requirements/base.txt
+COPY ./requirements/prod.txt /app/requirements/prod.txt
 
-RUN python -m pip install --no-cache-dir -r /app/requirements/base.txt
+RUN python -m pip install --no-cache-dir -r /app/requirements/prod.txt
 
 COPY ./ /app
 

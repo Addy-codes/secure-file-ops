@@ -27,7 +27,7 @@ async def signup(signup_request: SignupRequest):
 async def login(login_request: LoginRequest):
     user = await users_collection.find_one({"email": login_request.email})
     if not user or not pwd_context.verify(login_request.password, user["password"]):
-        raise HTTPException(status_code=403, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
     
     access_token = create_access_token({"sub": user["email"], "role": user["role"]})
     return {"access_token": access_token, "token_type": "bearer"}

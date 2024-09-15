@@ -31,6 +31,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 ENCRYPTION_KEY = utils.generate_key(SECRET_KEY)
 
+MONGO_URI = os.getenv("MONGO_URI")
+DATABASE = os.getenv("DATABASE")
+
 CONFIGURATION = Configuration()
 CONFIGURATION.api_key['api-key'] = os.getenv("BREVO_API_KEY")
 

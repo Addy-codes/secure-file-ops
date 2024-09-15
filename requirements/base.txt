@@ -10,4 +10,6 @@ python-jose
 email-validator
 python-multipart
 requests
-sib-api-v3-sdk   
+sib-api-v3-sdk
+password-strength
+pytest

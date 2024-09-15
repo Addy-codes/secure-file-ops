@@ -16,6 +16,6 @@ async def get_download_link(file_id: str):
 async def download(encrypted_link: str):
     return await download_file(encrypted_link)
 
-@router.get("/files", dependencies=[Depends(require_role("client")), Depends(is_verified_client)])
+@router.get("/", dependencies=[Depends(require_role("client")), Depends(is_verified_client)])
 async def list_files():
     return await list_files_with_creators()
