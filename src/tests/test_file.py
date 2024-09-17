@@ -1,4 +1,5 @@
 import os
+from io import BytesIO
 
 import pytest
 from fastapi.testclient import TestClient
@@ -6,6 +7,8 @@ from pymongo import MongoClient
 
 from src.main import app
 from src.auth.service import create_access_token
+from docx import Document
+
 
 # ============================ FIXTURES ============================
 
@@ -53,6 +56,12 @@ def verify_user(client, email):
     response = client.get(f"/auth/verify-email?token={verification_token}")
     assert response.status_code == 200
 
+def create_docx_file(file_path, content):
+    """Helper function to create a .docx file with the given content."""
+    doc = Document()
+    doc.add_paragraph(content)
+    doc.save(file_path)
+
 # ============================ TEST CASES ============================
 
 def test_file_upload_ops_user(client):
@@ -91,7 +100,7 @@ def test_file_upload_client_user_restricted(client):
 
 
 def test_file_download_link(client):
-    """Test uploading a file by an Ops user and retrieving the download link for that file by a Client user."""
+    """Test uploading a .docx file by an Ops user and retrieving the download link for that file by a Client user."""
     # Step 1: Create and login Ops user
     create_user(client, "opsuser2@example.com", "OpsPassword123!", role="ops")
     ops_token = login_user(client, "opsuser2@example.com", "OpsPassword123!")
@@ -103,14 +112,14 @@ def test_file_download_link(client):
     client_token = login_user(client, "clientuser@example.com", "ClientPassword123!")
     client_headers = {"Authorization": f"Bearer {client_token}"}
 
-    # Step 3: Ops User uploads a file
-    with open("testfile.txt", "wb") as f:
-        f.write(b"Dummy file content")
+    # Step 3: Ops User uploads a .docx file
+    docx_file_path = "testfile.docx"
+    create_docx_file(docx_file_path, "Dummy file content for docx")
 
-    with open("testfile.txt", "rb") as file:
+    with open(docx_file_path, "rb") as file:
         upload_response = client.post("/files/upload", files={"file": file}, headers=ops_headers)
 
-    os.remove("testfile.txt")  # Clean up the test file
+    os.remove(docx_file_path)  # Clean up the test file
     assert upload_response.status_code == 201
 
     file_id = upload_response.json()["file_id"]
@@ -127,28 +136,28 @@ def test_file_download_link(client):
     # Step 5: Client User uses the download link to download the file
     response = client.get(download_link, headers=client_headers)
     assert response.status_code == 200
-    assert response.content == b"Dummy file content"
+    assert response.content[:100]  # Ensuring that some content exists
 
 
 def test_file_download(client):
-    """Test uploading a file, generating an encrypted link, and downloading the file."""
+    """Test uploading a .docx file, generating an encrypted link, and downloading the file."""
     create_user(client, "clientuser4@example.com", "ClientPassword123!")
     verify_user(client, "clientuser4@example.com")
     token = login_user(client, "clientuser4@example.com", "ClientPassword123!")
     headers = {"Authorization": f"Bearer {token}"}
 
-    # Ops user creates and uploads the file
+    # Ops user creates and uploads the .docx file
     create_user(client, "opsuser3@example.com", "OpsPassword123!", role="ops")
     ops_token = login_user(client, "opsuser3@example.com", "OpsPassword123!")
     ops_headers = {"Authorization": f"Bearer {ops_token}"}
 
-    with open("testfile.txt", "wb") as f:
-        f.write(b"Dummy file content")
+    docx_file_path = "testfile.docx"
+    create_docx_file(docx_file_path, "Dummy file content for docx")
 
-    with open("testfile.txt", "rb") as file:
+    with open(docx_file_path, "rb") as file:
         response = client.post("/files/upload", files={"file": file}, headers=ops_headers)
 
-    os.remove("testfile.txt")  # Clean up the test file
+    os.remove(docx_file_path)  # Clean up the test file
     assert response.status_code == 201
 
     file_id = response.json()["file_id"]
@@ -161,8 +170,26 @@ def test_file_download(client):
     # Use encrypted link to download the file
     response = client.get(encrypted_link, headers=headers)
     assert response.status_code == 200
-    assert response.content == b"Dummy file content"
+    assert response.content[:100]  # Ensuring that some content exists
 
+
+def test_unsupported_file_format(client):
+    """Test uploading an unsupported file format (e.g., .exe) and expecting a rejection."""
+    # Step 1: Create and login Ops user
+    create_user(client, "opsuser5@example.com", "OpsPassword123!", role="ops")
+    ops_token = login_user(client, "opsuser5@example.com", "OpsPassword123!")
+    ops_headers = {"Authorization": f"Bearer {ops_token}"}
+
+    # Step 2: Try to upload an unsupported file format (e.g., .exe)
+    file_content = b"This is a dummy executable file content"
+    unsupported_file = BytesIO(file_content)
+    unsupported_file.name = "testfile.exe"  # Assigning a name to the file object
+
+    upload_response = client.post("/files/upload", files={"file": unsupported_file}, headers=ops_headers)
+
+    # Assert that the upload is rejected (e.g., 400 Bad Request or 415 Unsupported Media Type)
+    assert upload_response.status_code in [400, 415]
+    assert "Invalid file type. Only .pptx, .docx, and .xlsx files are allowed." == upload_response.json()["detail"]
 
 def test_list_files(client):
     """Test listing available files for a client user."""

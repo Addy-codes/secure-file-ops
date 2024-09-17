@@ -13,3 +13,4 @@ requests
 sib-api-v3-sdk
 password-strength
 pytest
+python-docx
